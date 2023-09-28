@@ -4,12 +4,19 @@ const screenWidth = canvas.width = window.innerWidth;
 const screenHeight = canvas.height = window.innerHeight;
 const fov = Math.PI / 3; // Wider field of view angle
 
+
 const worldMap = [
-    [1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 1],
-    [1, 0, 0, 0, 1],
-    [1, 0, 0, 0, 1],
-    [1, 1, 1, 1, 1]
+ [0, 1 ,1, 1, 1, 1, 1, 1, 0],
+ [0, 1 ,0, 0, 0, 0, 0, 1, 0],
+ [0, 1 ,0, 0, 0, 0, 0, 1, 0],
+ [0, 1, 0, 0, 0, 0, 0, 1, 0],
+ [0, 1 ,0, 0, 0, 0, 0, 1, 0],
+ [0, 1, 1, 0, 0, 0, 1, 1, 0],
+ [0, 0, 1, 1, 0, 1, 1, 0, 0],
+ [0, 0, 1, 0, 0, 0, 1, 0, 0],
+ [0, 0, 1, 0, 0, 0, 1, 0, 0],
+ [0, 1, 1, 0, 0, 0, 1, 1, 0],
+ [0, 1, 1, 1, 1, 1, 1, 1, 0]
 ];
 
 const player = {
@@ -17,10 +24,11 @@ const player = {
     y: 2.5, // Initial Y position (make sure it's not inside a wall)
     angle: Math.PI / 4,
     verticalAngle: 0, // Initialize vertical look angle
-    moveSpeed: 0.1,
+    moveSpeed: 0.05,
     rotateSpeed: 0.05
 };
 
+let wallCollisionsEnabled = true;
 let previousTimestamp = 0;
 let mouseSensitivity = 0.1; // Adjust this value to control sensitivity
 
@@ -35,6 +43,65 @@ canvas.onclick = () => {
         canvas.requestPointerLock();
     }
 };
+
+function handleConsoleCommand(command) {
+  const args = command.split(" ");
+
+  // Check for appropriate commands
+  switch (args[0]) {
+    case "/collisions":
+      if (args[] === "disable") {
+        wallCollisionsEnabled = false;
+        alert("Wall collisions disabled");
+      } else if (args[1] === "enable") {
+        wallCollisionsEnabled = true;
+        alert("Wall collisions enabled");
+      }
+      break;
+
+    case "/fps":
+      // Print the current frames per second (you can implement this)
+      break;
+
+    default:
+      alert("Unknown command");
+      break;
+  }
+}
+let isConsoleActive = false;
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "?") {
+    if (isConsoleActive) {
+      document.getElementById("console").style.display = "none";
+      document.getElementById("input").value = "";
+      isConsoleActive = false;
+    } else {
+      document.getElementById("console").style.display = "block";
+      document.getElementById("input").focus();
+      isConsoleActive = true;
+    }
+  }
+});
+
+document.getElementById("input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    if (e.shiftKey) {
+      const command = e.target.value;
+      handleConsoleCommand(command);
+      e.target.value = "";
+    }
+  }
+});
+
+document.getElementById("input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const command = e.target.value;
+    handleConsoleCommand(command);
+    e.target.value = "";
+  }
+});
+
 
 document.addEventListener('pointerlockchange', () => {
     isMouseLocked = document.pointerLockElement === canvas;
@@ -78,7 +145,7 @@ function movePlayer(angle, distance) {
 function isCollision(x, y) {
     const gridX = Math.floor(x);
     const gridY = Math.floor(y);
-    return worldMap[gridY][gridX] === 1;
+    return worldMap[gridY][gridX] === 2;
 }
 
 function castRays(timestamp) {
@@ -119,8 +186,20 @@ function castRay(x, y, angle) {
 function renderWall(screenX, ray, verticalOffset) {
     const wallHeight = screenHeight / ray.distance;
     const wallTop = (screenHeight - wallHeight) / 2 + verticalOffset; // Adjust the top position
-    ctx.fillStyle = 'gray'; // Color for solid color walls (you can change this)
-    ctx.fillRect(screenX, wallTop, 1, wallHeight);
+
+    // Calculate subpixel offsets for smoother rendering
+    let subpixelStep = 1; // Default to no subpixel rendering
+
+    // Check if the player is close to the wall to enable subpixel rendering
+    if (ray.distance) {
+        subpixelStep = 1; // Adjust this value for the desired smoothness
+    }
+
+    // Draw the wall with subpixel rendering
+    for (let i = 0; i < 0.1; i += subpixelStep) {
+        ctx.fillStyle = 'gray'; // Color for solid color walls (you can change this)
+        ctx.fillRect(screenX + i, wallTop, subpixelStep, wallHeight);
+    }
 }
 
 
@@ -131,6 +210,10 @@ function update() {
 function gameLoop(timestamp) {
     update();
     castRays(timestamp);
+    function gameLoop(timestamp) {
+    request(gameLoop);
+}
+
 }
 
 gameLoop();
